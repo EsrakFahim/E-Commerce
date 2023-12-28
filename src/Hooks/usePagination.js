@@ -39,9 +39,52 @@ export const usePagination = ({
             /* 
                   Calculate left & right sibling index and make sure they are with range 1 and totalPageCount
             */
+            const leftSiblingIndex = Math.max(currentPage - siblingCount, 1);
+            const rightSiblingIndex = Math.min(currentPage + siblingCount, totalPageCount);
 
 
+            /* 
+                  We do not show dots just when there is just one page number to be inserted between the extremes of sibling and the page limits i.e 1 and totalPageCount. Hence we are using leftSiblingIndex > 2 and rightSiblingIndex < totalPageCount - 2
+            */
+            const shouldShowLeftDot = leftSiblingIndex > 2;
+            const shouldShowRightDot = rightSiblingIndex < totalPageCount - 2;
 
+            const firstPageIndex = 1;
+            const lastPageIndex = totalPageCount;
+
+
+            /* 
+                  Case-2 : no lest dots to show , but right dot to be shown  
+            */
+
+            if (!shouldShowLeftDot && shouldShowRightDot) {
+                  let leftItemCount = 3 + 2 * siblingCount;
+                  let leftRange = range(1, leftItemCount);
+
+                  return [...leftRange, Dots, totalPageCount];
+            };
+
+            /* 
+                  Case-3: No right dots to show , but left dots to br shown  
+            */
+
+            if (shouldShowLeftDot && !shouldShowRightDot) {
+                  let rightItemCount = 3 + 2 * siblingCount;
+                  let rightRange = range(
+                        totalPageCount - rightItemCount + 1,
+                        totalPageCount
+                  );
+                  return [firstPageIndex, Dots, ...rightRange]
+            };
+
+            /* 
+                  Case 4 : Both left & right dots to be shown 
+            */
+
+            if (shouldShowLeftDot && shouldShowRightDot) {
+                  let middleRange = range(leftSiblingIndex, rightSiblingIndex);
+                  return [firstPageIndex, Dots, ...middleRange, Dots, lastPageIndex];
+            };
 
 
       }, [totalCount, pageSize, siblingCount, currentPage]);
