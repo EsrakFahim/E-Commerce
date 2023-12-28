@@ -3,7 +3,7 @@
   width: 100%;
   justify-content: center;
   list-style-type: none;
-  margin-top: 10px;
+  margin: 30px 0;
 
   .pagination-item {
     padding: 0 12px;
@@ -57,6 +57,7 @@
 
     &.disabled {
       pointer-events: none;
+      opacity: 0;
 
       .arrow::before {
         border-right: 0.12em solid rgba(0, 0, 0, 0.43);

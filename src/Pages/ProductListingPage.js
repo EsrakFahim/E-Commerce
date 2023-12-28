@@ -71,7 +71,7 @@ const ProductListingPage = () => {
 
 
       // pagination part 
-      let pageSize = 1;
+      let pageSize = 10;
 
       const currentProductsData = useMemo(() => {
             const firstPageIndex = (currentPage - 1) * pageSize;
