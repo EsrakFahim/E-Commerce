@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import Pagination from '../Components/Pagination/Pagination';
 
 const ProductListingPage = () => {
       const [isDropdownVisible, setDropdownVisible] = useState(false);
       const [dropDownBtn, setDropDownBtn] = useState('Recommended');
       const [products, setProduct] = useState();
+      const [currentPage, setCurrentPage] = useState(1);
 
 
       useEffect(() => {
@@ -68,6 +70,16 @@ const ProductListingPage = () => {
       }
 
 
+      // pagination part 
+      let pageSize = 1;
+
+      const currentProductsData = useMemo(() => {
+            const firstPageIndex = (currentPage - 1) * pageSize;
+            const lastPageIndex = firstPageIndex + pageSize;
+            return products?.slice(firstPageIndex, lastPageIndex);
+      }, [currentPage, pageSize, products])
+
+
       return (
             <>
                   <div className='w-full  flex items-center relative'>
@@ -108,13 +120,13 @@ const ProductListingPage = () => {
                         </div>
                   </div>
                   <div className='flex border-t-[1px] border-gray-200'>
-                        <div className='border-r-[1px] border-gray-200 w-[20%]  overflow-x-hidden'>
+                        <div className='border-r-[1px] border-gray-200 w-[20%] hidden lg:block   overflow-x-hidden'>
 
                         </div>
-                        <div className='w-[80%]  p-5 flex justify-center '>
-                              <div className='grid grid-cols-4 gap-x-14 gap-y-12'>
+                        <div className='w-full lg:w-[80%]  p-5 flex flex-col justify-center items-start'>
+                              <div className='grid  sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-14 gap-y-12'>
                                     {
-                                          products?.map(elm => (
+                                          currentProductsData?.map(elm => (
                                                 <div key={elm.id} className='product-items-card  min-h-[400px] w-[230px] border border-gray-100 hover:shadow-2xl duration-300 rounded-md hover:rounded-xl overflow-hidden cursor-pointer'>
                                                       <div className='w-full h-[280px] overflow-hidden '>
                                                             <img className='w-full h-full' src={elm.imgUrl} alt="" />
@@ -154,6 +166,13 @@ const ProductListingPage = () => {
                                           ))
                                     }
                               </div>
+                              <Pagination
+                                    className='pagination-bar'
+                                    currentPage={currentPage}
+                                    totalCount={products?.length}
+                                    pageSize={pageSize}
+                                    onPageChange={page => setCurrentPage(page)}
+                              />
                         </div>
                   </div>
             </>
