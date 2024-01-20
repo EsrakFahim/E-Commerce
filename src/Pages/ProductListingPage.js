@@ -2,81 +2,39 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Pagination from '../Components/Pagination/Pagination';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
+import RangeBar from '../Components/RangeBar/RangeBar';
 
 const ProductListingPage = () => {
-      const [isDropdownVisible, setDropdownVisible] = useState(false);
       const [dropDownBtn, setDropDownBtn] = useState('Recommended');
       const [currentPage, setCurrentPage] = useState(1);
+      const [totalProducts, setTotalProducts] = useState();
       const [productsBrandName, setProductsBrandName] = useState();
+      const [sortBy, setSortBy] = useState()
       const [state, setState] = useState({
             products: [],
             filters: new Set(),
       })
-      console.log(state.products)
-      useEffect(() => {
-            // Initial product data fetch
-            // const fetchData = async () => {
-            //       try {
-            //             const response = await axios.get('http://localhost:5000/data');
-
-            //             setProductData(response.data);
-            //             setState((prevState) => ({
-            //                   ...prevState,
-            //                   products: response.data,
-            //             }))
-            //       } catch (error) {
-            //             console.error(error, 'error');
-            //       }
-            // };
-
-            // Initial category data fetch
-            const categoryData = async () => {
-                  try {
-                        const response = await fetch('category.json');
-                        const data = await response.json();
-                        setProductsBrandName(data.brands);
-                  } catch (error) {
-                        console.error(error);
-                  }
-            };
-
-            categoryData()
-      }, []);
 
 
-
-      // const { data: allProducts, refetch } = useQuery({
-      //       queryKey: ['products'],
-      //       queryFn: async () => {
-      //             const res = await axios.get('http://localhost:5000/data')
-      //             return (
-      //                   res.data
-      //                   setState((prevState) => ({
-      //                         ...prevState,
-      //                         products: response.data,
-      //                   }))
-      //                   )
-      //       }
-      // });
-
-
-
-
-      const { data: allProducts, refetch } = useQuery({
+      const { data: allProducts, isLoading, refetch } = useQuery({
             queryKey: ['products'],
             queryFn: async () => {
                   try {
-                        const res = await axios.get('http://localhost:5000/data');
-                        const responseData = res.data;
-
+                        const res0 = await axios.get(`http://localhost:5000/product/data?page=${currentPage}&pageSize=10&sort=${sortBy}`);
+                        const res1 = await axios.get('http://localhost:5000/category');
+                        const productFetchData = res0.data;
+                        const categoryData = res1.data;
+                        // console.log(res0)
                         // Additional logic after fetching the data
-                        // For example, updating state
+                        setTotalProducts(productFetchData?.totalProduct)
                         setState((prevState) => ({
                               ...prevState,
-                              products: responseData,
+                              products: productFetchData,
                         }));
 
-                        return responseData;
+                        setProductsBrandName(categoryData.brands)
+
+                        return { productFetchData, categoryData };
                   } catch (error) {
                         // Handle errors if necessary
                         console.error('Error fetching data:', error);
@@ -85,77 +43,26 @@ const ProductListingPage = () => {
             },
       });
 
+      console.log(isLoading);
 
 
-
-
-      const setProductRecommended = (btnText) => {
+      useEffect(() => {
             refetch()
-            setDropDownBtn(btnText)
-      }
-      const shortedPriceHighToLow = (btnText) => {
-            const shortedPrice = [...state.products].sort((a, b) => a.currentPrice - b.currentPrice)
-            setState((prevState) => ({
-                  ...prevState,
-                  products: shortedPrice,
-            }))
-            setDropDownBtn(btnText)
-      }
-      const shortedPriceLowToHigh = (btnText) => {
-            const shortedPrice = [...state.products].sort((a, b) => b.currentPrice - a.currentPrice)
-            setState((prevState) => ({
-                  ...prevState,
-                  products: shortedPrice,
-            }))
-            setDropDownBtn(btnText)
-      }
-      const shortedPriceAToZ = (btnText) => {
-            const shortedPrice = [...state.products].sort((a, b) => a.productName.localeCompare(b.productName))
-            setState((prevState) => ({
-                  ...prevState,
-                  products: shortedPrice,
-            }))
-            setDropDownBtn(btnText)
-      }
-      const shortedPriceZToA = (btnText) => {
-            const shortedPrice = [...state.products].sort((a, b) => b.productName.localeCompare(a.productName))
-            setState((prevState) => ({
-                  ...prevState,
-                  products: shortedPrice,
-            }))
-            setDropDownBtn(btnText)
-      }
+            // console.log('fetch')
+      }, [currentPage, refetch, sortBy])
 
-      const sortBetterDiscount = (btnText) => {
-            const discountedProducts = state.products.slice().sort((a, b) => {
-                  const discountA = (a.previousPrice - a.currentPrice) / a.previousPrice * 100;
-                  const discountB = (b.previousPrice - b.currentPrice) / b.previousPrice * 100;
-
-                  return discountB - discountA;
-            })
-            setState((prevState) => ({
-                  ...prevState,
-                  products: discountedProducts,
-            }))
-            setDropDownBtn(btnText)
+      
+      const handleSortBtn = (btnValue) => {
+            setSortBy(btnValue);
+            setDropDownBtn(btnValue)
       }
-
-
-      // pagination part 
-      let pageSize = 10;
-
-      const currentProductsData = useMemo(() => {
-            const firstPageIndex = (currentPage - 1) * pageSize;
-            const lastPageIndex = firstPageIndex + pageSize;
-            return state.products?.slice(firstPageIndex, lastPageIndex);
-      }, [currentPage, pageSize, state.products])
-
-      console.log(currentProductsData)
 
       const handleFilterChange = useCallback(event => {
+            setCurrentPage(1)
             setState(previousState => {
                   let filters = new Set(previousState.filters)
-                  let products = allProducts
+                  let products = allProducts.productFetchData
+                  // console.log(products)
 
                   if (event.target.checked) {
                         filters.add(event.target.value)
@@ -164,7 +71,7 @@ const ProductListingPage = () => {
                   }
 
                   if (filters.size) {
-                        products = products.filter(product => {
+                        products = products?.filter(product => {
                               return filters.has(product.brandName)
                         })
                   }
@@ -175,6 +82,10 @@ const ProductListingPage = () => {
                   }
             })
       }, [setState, allProducts])
+
+      if (isLoading) {
+            return <p>Loading......</p>
+      }
 
 
       return (
@@ -192,36 +103,15 @@ const ProductListingPage = () => {
                                     <span className='hover:text-gray-800 cursor-pointer' >Sizes</span>
                               </div>
                               <div className="App relative z-50">
-                                    {/* <div className="App-header w-[300px] ">
-                                          <div
-                                                className=""
-                                                onMouseEnter={handleMouseEnter}
-                                                onMouseLeave={handleMouseLeave}
-                                          >
-                                                <button className='w-full flex items-center gap-3' ><span>Sort By :</span><span>{dropDownBtn}</span></button>
-                                                
-                                                {isDropdownVisible &&
-                                                      <div className={`dropdown-menu w-full  absolute top-12  duration-1000 ${isDropdownVisible ? 'opacity-100' : 'opacity-0 '} `}>
-                                                            <ul>
-                                                                  <li onClick={(e) => shortedPriceHighToLow(e.target.textContent)}>Price: Low To High</li>
-                                                                  <li onClick={(e) => shortedPriceLowToHigh(e.target.textContent)}>Price: High To Low</li>
-                                                                  <li onClick={(e) => shortedPriceAToZ(e.target.textContent)}>Name: A To Z</li>
-                                                                  <li onClick={(e) => shortedPriceZToA(e.target.textContent)}>Name: Z To A</li>
-                                                                  <li onClick={(e) => sortBetterDiscount(e.target.textContent)}>Better Discount</li>
-                                                            </ul>
-                                                      </div>
-                                                }
-                                          </div>
-                                    </div> */}
-                                    <li class="dropdown dropdown-4 w-[280px]">
+                                    <li className="dropdown dropdown-4 w-[280px]">
                                           <span>Sort By :</span><span>{dropDownBtn}</span>
-                                          <ul class="dropdown_menu dropdown_menu-4">
-                                                <li className="dropdown_item-1" onClick={(e) => setProductRecommended(e.target.textContent)}>Recommended</li>
-                                                <li className="dropdown_item-1" onClick={(e) => shortedPriceHighToLow(e.target.textContent)}>Price: Low To High</li>
-                                                <li className="dropdown_item-2" onClick={(e) => shortedPriceLowToHigh(e.target.textContent)}>Price: High To Low</li>
-                                                <li className="dropdown_item-3" onClick={(e) => shortedPriceAToZ(e.target.textContent)}>Name: A To Z</li>
-                                                <li className="dropdown_item-4" onClick={(e) => shortedPriceZToA(e.target.textContent)}>Name: Z To A</li>
-                                                <li className="dropdown_item-5" onClick={(e) => sortBetterDiscount(e.target.textContent)}>Better Discount</li>
+                                          <ul className="dropdown_menu dropdown_menu-4">
+                                                <li className="dropdown_item-1" onClick={(e) => handleSortBtn(e.target.textContent)}>Recommended</li>
+                                                <li className="dropdown_item-1" onClick={(e) => handleSortBtn(e.target.textContent)}>Price: Low To High</li>
+                                                <li className="dropdown_item-2" onClick={(e) => handleSortBtn(e.target.textContent)}>Price: High To Low</li>
+                                                <li className="dropdown_item-3" onClick={(e) => handleSortBtn(e.target.textContent)}>Name: A To Z</li>
+                                                <li className="dropdown_item-4" onClick={(e) => handleSortBtn(e.target.textContent)}>Name: Z To A</li>
+                                                <li className="dropdown_item-5" onClick={(e) => handleSortBtn(e.target.textContent)}>Better Discount</li>
                                           </ul>
                                     </li>
                               </div>
@@ -235,17 +125,18 @@ const ProductListingPage = () => {
                               {
                                     productsBrandName?.map((brand, idx) => (
                                           <div key={idx} className=' flex items-center gap-2  text-lg text-gray-500 hover:text-gray-900 duration-0 cursor-pointer'>
-                                                <label className='cursor-pointer' htmlFor={brand} /* onChange={(e) => test(e)} */  >
+                                                <label className='cursor-pointer' htmlFor={brand}   >
                                                       <input className='cursor-pointer' type="checkbox" name={brand} value={brand} id={brand} onChange={handleFilterChange} />
                                                       {brand}</label>
                                           </div>
                                     ))
                               }
+                              <RangeBar/>
                         </div>
                         <div className='w-full lg:w-[80%]  p-5 flex flex-col justify-center items-center'>
                               <div className='grid  grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-14 lg:gap-y-12'>
                                     {
-                                          currentProductsData?.map(elm => (
+                                          state.products.currentPageProduct?.map(elm => (
                                                 <div key={elm.id} className='product-items-card  min-h-[400px] w-full lg:w-[230px] border border-gray-100 hover:shadow-2xl duration-300 rounded-md hover:rounded-xl overflow-hidden cursor-pointer'>
                                                       <div className='w-full h-[280px] overflow-hidden '>
                                                             <img className='w-full h-full' src={elm.imgUrl} alt="" />
@@ -291,14 +182,16 @@ const ProductListingPage = () => {
                                     }
                               </div>
                               {
-                                    state?.products?.length > pageSize &&
+                                    // state?.products?.length > pageSize &&
                                     <Pagination
                                           className='pagination-bar'
                                           currentPage={currentPage}
-                                          totalCount={allProducts?.length}
-                                          pageSize={pageSize}
+                                          // totalCount={allProducts?.productFetchData.currentPageProduct?.length}
+                                          totalCount={totalProducts}
+                                          pageSize={10}
                                           onPageChange={page => setCurrentPage(page)}
-                                    />}
+                                    />
+                              }
                         </div>
                   </div>
             </>

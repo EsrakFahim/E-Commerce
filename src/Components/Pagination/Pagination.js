@@ -14,6 +14,17 @@ const Pagination = (props) => {
             className
       } = props;
 
+      // console.log(
+      //       {
+      //             'className': className,
+      //             'currentPage': currentPage,
+      //             'totalCount': totalCount,
+      //             'pageSize': pageSize,
+      //             'onPageChange': onPageChange
+      //       }
+      // )
+
+
       const paginationRange = usePagination({
             currentPage,
             totalCount,
@@ -57,7 +68,7 @@ const Pagination = (props) => {
                                     </span>
                               </div>
                         </li>
-                        {paginationRange.map((pageNumber,idx) => {
+                        {paginationRange.map((pageNumber, idx) => {
                               // if the page item is a dot , render the Dots unicode character
                               if (pageNumber === Dots) {
                                     return <li className='pagination-item-dots' >&#8230;</li>;
@@ -65,7 +76,7 @@ const Pagination = (props) => {
 
                               // Render our page pills
                               return (
-                                    <li   
+                                    <li
                                           key={idx}
                                           className={classNames('pagination-item', {
                                                 selected: pageNumber === currentPage
